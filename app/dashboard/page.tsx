@@ -6,17 +6,29 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
+type User = {
+  id: string
+  email: string
+  user_metadata: {
+    tenant_name?: string
+  }
+}
+
 export default function Dashboard() {
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
   const router = useRouter()
   const supabase = createClientComponentClient()
 
   useEffect(() => {
     const getUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      setUser(user)
+      const { data } = await supabase.auth.getUser()
+      if (data.user) {
+        setUser({
+          id: data.user.id,
+          email: data.user.email ?? "",
+          user_metadata: data.user.user_metadata ?? {},
+        })
+      }
     }
     getUser()
   }, [supabase.auth])
@@ -38,7 +50,7 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent>
           <p className="mb-4">Welcome, {user.email}!</p>
-          <p className="mb-4">Tenant: {user.user_metadata.tenant_name}</p>
+          <p className="mb-4">Tenant: {user.user_metadata?.tenant_name || "No tenant assigned"}</p>
           <Button onClick={handleSignOut} className="w-full">
             Sign Out
           </Button>
@@ -47,4 +59,5 @@ export default function Dashboard() {
     </div>
   )
 }
+
 
