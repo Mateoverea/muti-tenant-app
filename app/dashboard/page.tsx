@@ -5,14 +5,7 @@ import { useRouter } from "next/navigation"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-
-type User = {
-  id: string
-  email: string
-  user_metadata: {
-    tenant_name?: string
-  }
-}
+import type { User } from "@supabase/supabase-js" // Importamos el tipo de usuario
 
 export default function Dashboard() {
   const [user, setUser] = useState<User | null>(null)
@@ -21,17 +14,20 @@ export default function Dashboard() {
 
   useEffect(() => {
     const getUser = async () => {
-      const { data } = await supabase.auth.getUser()
+      const { data, error } = await supabase.auth.getUser()
+
+      if (error) {
+        console.error("Error fetching user:", error.message)
+        return
+      }
+
       if (data.user) {
-        setUser({
-          id: data.user.id,
-          email: data.user.email ?? "",
-          user_metadata: data.user.user_metadata ?? {},
-        })
+        setUser(data.user)
       }
     }
+
     getUser()
-  }, [supabase.auth])
+  }, [supabase])
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -50,7 +46,9 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent>
           <p className="mb-4">Welcome, {user.email}!</p>
-          <p className="mb-4">Tenant: {user.user_metadata?.tenant_name || "No tenant assigned"}</p>
+          <p className="mb-4">
+            Tenant: {user.user_metadata?.tenant_name || "No tenant assigned"}
+          </p>
           <Button onClick={handleSignOut} className="w-full">
             Sign Out
           </Button>
